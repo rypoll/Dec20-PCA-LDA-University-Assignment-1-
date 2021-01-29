@@ -1,0 +1,173 @@
+##3.1 If ---- 
+x <- 10
+if (x > 0) y <- log(x)
+y
+
+x <- -2
+if (x < 0){
+  y <- x ^ 2
+  z <- x ^ 3
+}
+
+##3.2 && 
+
+x <- 1:3
+y <- 4:6
+x > 1 & y > 5
+
+#tests first only
+x > 1 && y > 5
+
+#doesn't work as expected, cos of two &
+x <- 1:10
+x[x < 5 && x > 0]
+
+##1.3 if else
+x <- 5
+(if (x > 0) y <- log(x) else y <- NA)
+
+x <- -3
+(if (x > 0) y <- log(x) else y <- NA)
+
+
+x <- 5
+y <- -8
+if(x > 0 && y > 0){
+  a <- 10
+  b <- 50
+} else{
+  a <- 100
+  b <- 200
+}
+a
+
+
+
+print_sign_of_x <- function(x){
+  if  (is.na(x)) print("x is NA") else
+    if (x < 0) print("x is negative") else
+      print( "x is non-negative") 
+}  
+print_sign_of_x(x = NA)
+
+
+#if else
+
+x <- 1:10
+(y <- ifelse(test = x < 4.3 , yes = 1, no = 0))
+
+
+x <- c(-3:3)
+ifelse(x > 2, yes = 1:7, no = 11:17)
+
+
+#switch
+
+generate_realisations <- function(distribution, ..., n = 1){
+  switch(distribution,
+         "uniform" = runif(n = n, ...),
+         "gaussian" = rnorm(n = n, ...),
+         "binomial" = rbinom(n = n, ...))
+}
+generate_realisations("uniform", min = 2, max = 100)
+generate_realisations("uniform", n = 5)
+generate_realisations("gaussian", mean = 2, sd = 0.5)
+
+
+##looping
+
+n <- 100
+a <- 2.5 # or any value between 0 and 4
+x <- rep(NA, n)
+x[1] <- runif(1)
+for (j in 2:n) x[j] <- a * x[j-1] * (1-x[j-1])
+
+
+
+n <- 10
+a <- 2.5 # or any value between 0 and 4
+x <- rep(NA, n)
+x[1] <- runif(1)
+for (j in 2:n) {
+  x[j] <- a * x[j-1] * (1-x[j-1])
+  cat("iteration=", j, "\t", "value=", x[j], "\n")
+}
+
+
+#while
+set.seed(6578)
+find_root <- function(x) sqrt(4 * x - 1)
+x <- 0.3  
+delta <- 100
+while (delta > 0.01) {
+  newx <- find_root(x)
+  delta <- abs(x - newx)
+  x <- newx
+  cat("x=", x, "\n")
+}
+
+
+#next - produces a skip to next iteration
+m <- 8
+counter <- 0
+pos_normals <- NULL
+while(counter < m){
+  value_to_check <- rnorm(1)
+  if(value_to_check < 0) next else {
+    pos_normals <- c(pos_normals, value_to_check) 
+    counter <- counter +1
+  }
+}
+pos_normals
+
+
+#break
+set.seed(3644)
+x <- rep(NA, 100)
+x[1] <- 1.005
+for(i in 2:100){
+  x[i] <- x[i-1] ^ 2 + rnorm(1, sd = 0.1)
+  if(x[i] > 10){
+    cat("Value has gone above 10\n\n")
+    print(x)
+    break
+  } 
+}
+
+
+#subsetting to avoid loooping
+(x <- rnorm(10))
+
+cutoff1 <- function(x, threshold)   {
+  for (i in 1:length(x))  {
+    if (x[i] < threshold)  x[i] <- 0  
+  }
+  return(x)
+}
+cutoff1(x, threshold = 0)
+
+
+#can do this in vectorised way
+
+cutoff2 <- function(x, threshold){
+  x <- ifelse( x < threshold, 0, x)
+  return(x)
+}
+cutoff2(x, threshold = 0)
+
+
+#or logical subscript, beter
+
+cutoff3 <- function(x, threshold){
+  x[x < threshold] <- 0
+  return(x)
+}
+cutoff3(x, threshold = 0)
+
+
+#or even more simply
+cutoff4 <- function(x, threshold)  {
+  x <- x*(x >= threshold)
+  return(x)
+}
+cutoff4(x, threshold = 0)

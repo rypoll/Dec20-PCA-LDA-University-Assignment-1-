@@ -1,0 +1,17 @@
+/* Whole document: */
+body{
+  font-family: Helvetica;
+  font-size: 8pt;
+}
+/* Headers */
+h1,h2,h3,h4,h5,h6{
+  font-size: 11pt;
+}
+
+code.r{
+  font-size: 7px;
+}
+pre {
+  font-size: 7px
+}
+

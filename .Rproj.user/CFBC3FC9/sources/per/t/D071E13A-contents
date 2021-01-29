@@ -1,0 +1,123 @@
+---
+title: "English Universities Gender Pay Gap Report"
+author: "Ryan Pollard"
+date: "23/11/2020"
+output: html_document
+fontsize: 11pt
+urlcolor: blue
+
+---
+###COMMENT FROM RYAN, MAYBE CAN CHNGE MEANDIFF VARIALBE TO % EARN MORE MEN, FOR EG
+### 100/ (100 - VARIABLE)
+
+<!-- Create an R Markdown document that presents some of your solutions to Exercise 18.1 on the Brexit data. -->
+<!-- For now, make a document that presents one plot only. -->
+<!-- Knit your document to html. -->
+<!-- If you have LaTeX on your computer, try knitting to pdf as well. -->
+<!-- The goal of this exercise is simply to produce a working document: do not worry about how your document looks. You will change the appearance of your document in later exercises. -->
+<div style="margin-bottom:100px;">
+```{r setup, include= FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(fig.align='center')
+knitr::opts_knit$set(root.dir='C:/Users/T430/Google Drive/00 - Masters/Stat Toolkit/EDA/Case Study/Gender Pay Gap')
+
+```
+</div> 
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+setwd("C:/Users/T430/Google Drive/00 - Masters/Stat Toolkit/EDA/Case Study/Gender Pay Gap")
+
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+source("C:/Users/T430/Google Drive/00 - Masters/Stat Toolkit/EDA/Case Study/Gender Pay Gap/01 - Final cleaned code.R")
+
+```
+
+This report looks at the gender pay gap across Universities in England.
+<div style="margin-bottom:50px;">
+</div> 
+
+## Gender pay gap in Universities across regions of England in 2019
+\newline
+<div style="margin-bottom:50px;">
+</div> 
+
+
+```{r boxplot, fig.align='center', fig.cap="London has the least gender pay gap, with South West having the highest gender pay gap. London's middle value of 12% (the thick vertical bar inside its box) represents females mean hourly wage being 12% less than for men. Low bases in regions may indicate that the results represent randomness rather than a trend", warning=FALSE, out.width='100%'}
+library(ggthemes)
+library(forcats)
+#box plots by region
+datapc19 %>%
+  mutate(Region = fct_reorder(Region, desc(DiffMeanHourlyPercent))) %>%
+  ggplot(aes(y = Region, x = DiffMeanHourlyPercent)) +
+  geom_boxplot(aes(fill = Region)) +
+  theme_minimal()+
+  scale_fill_tableau() +
+  theme(legend.position = "none") +
+  labs(x = "% Difference of Mean Hourly Wage (>0 = Men are paid more)", 
+       title = "Difference of hourly pay between genders across regions \n in England in 2019 (n = 91)",
+       caption = "NB: % difference > 0 represents men paid more  (e.g 10% represents females paid 10% less per hour on average) \n Source: gov.uk Gender Pay Gap Service.", y="") 
+
+
+```
+
+<div style="margin-bottom:100px;">
+</div> 
+
+## Gender pay gap in 2019 across Universities' founded year
+<div style="margin-bottom:50px;">
+</div> 
+
+
+```{r histo, warning=FALSE, out.width='100%', fig.cap="Universities pre-1992 show less equality in pay than post-1992 univerisites as the post-1992 distribution is more towards 0 (0 represents equality)" }
+
+plot_multi_histogram <- function(df, feature, label_column) {
+  plt <- ggplot(df, aes(x=eval(parse(text=feature)), fill=eval(parse(text=label_column)))) +
+    geom_density(alpha=0.4) +
+    theme_minimal() + 
+    theme(legend.position = "top") +
+    geom_vline(aes(xintercept=mean(eval(parse(text=feature)))), color="black", linetype="dashed", size=1) +
+    labs(x="% Difference of Mean Hourly Wage (>0 = Men paid more) ", y = "Density",
+         title = "Distribution between pre and post 1992 Universities of the difference \n between genders of hourly pay % in 2019 (n = 91)",
+         subtitle = "",
+         caption = "NB: % difference > 0 represents men paid more  (e.g 10% represents females paid 10% less per hour on average) \n Vertical line represents mean \n Source: gov.uk Gender Pay Gap Service.") +
+    xlim(-2, 35)  
+  plt + guides(fill=guide_legend(title="Year uni founded"))
+}
+
+options(repr.plot.width = 20, repr.plot.height = 8)
+plot_multi_histogram(datapc19, 'DiffMeanHourlyPercent', 'institution')
+```
+
+
+
+<div style="margin-bottom:100px;">
+</div> 
+
+## Gender pay gap changing with time, across years 2018-2020
+<div style="margin-bottom:50px;">
+</div> 
+
+
+
+```{r histo2, warning=FALSE, out.width='100%', fig.cap="As years progress, the difference in pay between gender decreases, as seen by distributions moving towards 0 as years progress (0 represents no difference in pay)" }
+
+plot_multi_histogram <- function(df, feature, label_column) {
+  plt <- ggplot(df, aes(x=eval(parse(text=feature)), fill=eval(parse(text=label_column)))) +
+    #geom_histogram(alpha=0.7, position="identity", aes(y = ..density..), color="black") +
+    geom_density(alpha=0.4) +
+    theme_minimal() + 
+    theme(legend.position = "top") +
+    geom_vline(aes(xintercept=mean(eval(parse(text=feature)))), color="black", linetype="dashed", size=1) +
+    labs(x="% Difference of Mean Hourly Wage (>0 = Men paid more)", y = "Density",
+         title = "Distribution across years of the difference of hourly pay between genders \n (n = 251)",
+         subtitle = "",
+         caption = "NB: % difference > 0 represents men paid more  (e.g 10% represents females paid 10% less per hour on average) \n Vertical line represents mean \n Source: gov.uk Gender Pay Gap Service.") +
+    xlim(-2, 35)
+  plt + guides(fill=guide_legend(title="Year of data"))
+}
+
+plot_multi_histogram(data_joined_subset1, 'DiffMeanHourlyPercent', 'year')
+```

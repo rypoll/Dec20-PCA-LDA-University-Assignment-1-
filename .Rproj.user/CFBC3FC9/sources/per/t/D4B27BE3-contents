@@ -1,0 +1,201 @@
+library(tidyverse)
+setwd("C:/Users/T430/Google Drive/00 - Masters/Stat Toolkit/EDA/Case Study/Gender Pay Gap")
+#read in data
+data17 <- read_csv("data/UK Gender Pay Gap Data - 2017 to 2018.csv")
+data18 <- read_csv("data/UK Gender Pay Gap Data - 2018 to 2019.csv")
+data19 <- read_csv("data/UK Gender Pay Gap Data - 2019 to 2020.csv")
+data20 <- read_csv("data/UK Gender Pay Gap Data - 2020 to 2021.csv")
+
+
+#postcode data
+postcode <- readxl::read_excel("data/Region postcode link.xlsx")
+#pre post 92 unis universities
+
+universities <- read_csv("data/universities.csv")
+
+##fix data
+
+
+man <- which(universities$EmployerName == "The University Of Manchester")
+universities[man, ]
+
+south <- which(universities$EmployerName == "University of Southampton")
+universities[south,]
+
+universities[man, "institution"] <- "pre-92"
+universities[south[2], "EmployerName"] <- "Solent University"
+
+
+#join all data above
+data_joined <- rbind(data17, data18, data19, data20)
+#the year can be duedate
+
+
+#create new column saying the year
+data_joined$DueDate
+
+
+data_joined <- data_joined %>%
+  mutate(year = substr(data_joined$DueDate, 7, 10))
+
+data_joined %>%
+  select(DueDate, year)
+
+#combine the university data
+
+#EmployerName
+
+data_joined1 <- left_join(data_joined, universities,
+                       by = c("EmployerName" = "EmployerName"))
+
+data_joined_subset <- inner_join(data_joined, universities,
+                          by = c("EmployerName" = "EmployerName"))
+
+data_joined1$institution
+
+#how many unis provided each year
+data_joined_subset %>%
+  count(institution, year)
+
+
+#summary statistics
+#DiffMeanHourlyPercent use this
+
+data_joined_subset %>%
+  group_by(institution,year ) %>%
+  summarise(meandiff = mean(DiffMeanHourlyPercent))
+
+#postcode
+#create variable with postcode
+
+#substr(word(data_joined_subset$Address,-2,-2), 1, 2)
+
+#word(data17$Address,-2,-2)
+data_joined_subset <- data_joined_subset %>%
+  mutate(postcode = substr(word(data_joined_subset$Address,-2,-2), 1, 2))
+
+
+#create new postcode variable
+data_joined_subset <- data_joined_subset %>%
+  mutate(postcode1 = gsub('[[:digit:]]+', '', data_joined_subset$postcode))
+
+#make it all uppercase
+data_joined_subset <- data_joined_subset %>%
+  mutate(postcode1 = toupper(postcode1))
+#join postcode data
+
+data_joined_subset1 <- left_join(data_joined_subset, postcode,
+                          by = c("postcode1" = "Prefix"))
+
+##summaries
+data_joined_subset1 %>%
+  group_by(Region,year ) %>%
+  summarise(meandiff = mean(DiffMeanHourlyPercent))
+
+
+
+#to get data https://gender-pay-gap.service.gov.uk/Employer/OVZZEQZ9/2019
+library(ggplot2)
+
+#make histogram and split by pre and post 92, and add normal curve
+
+datapc19 <- data_joined_subset1[ which(data_joined_subset1$year=='2019'), ]
+
+
+ggplot(data = data_joined_subset1[ which(data_joined_subset1$year=='2019'), ]
+, aes(x = DiffMeanHourlyPercent, )) + 
+  geom_histogram(colour = "black", fill = "blue", binwidth = 2, aes(y=..density.., fill=..count..)) +
+  labs(x = "Difference in Mean Hourly Pay (+ % means women earn this % less than men per hour on avg") +
+  stat_function(fun = dnorm, color="red", args = list(mean = mean(datapc19$DiffMeanHourlyPercent), sd = sd(datapc19$DiffMeanHourlyPercent))) +
+  annotate("point", x = 19, y = 0,  size = 4, colour = "red") 
+
+#what is uni of sheffield?
+data_joined_subset1[ which(data_joined_subset1$EmployerName=='University of Sheffield'), ]
+data_joined_subset1[ which(data_joined_subset1$year=='2019'), ]
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+#######################################################################################
+#######################################################################################
+
+
+
+
+
+
+  
+ 
+  
+
+
+# FINAL CHARTS
+
+###COMMENT FROM RYAN, MAYBE CAN CHNGE MEANDIFF VARIALBE TO % EARN MORE MEN, FOR EG
+### 100/ (100 - VARIABLE)
+
+
+#USE THIS ONE IMO
+# from site, expalanation of uni sheff diffmeanhourly percent
+#When comparing mean hourly wages, women’s mean hourly wage is 17.8% lower than men’s.
+library(ggthemes)
+library(forcats)
+#box plots by region
+datapc19 %>%
+  mutate(Region = fct_reorder(Region, desc(DiffMeanHourlyPercent))) %>%
+  #mutate(name=factor(Region, levels=Region)) %>%
+  #mutate(name = factor(Region, levels=c("North West England", "Yorkshire and the Humber", "North East England", "West Midlands", "East Midlands", "East of England", "South West England", "London", "South East England"))) %>%
+  ggplot(aes(y = Region, x = DiffMeanHourlyPercent)) +
+  geom_boxplot(aes(fill = Region)) +
+  theme_minimal()+
+  scale_fill_tableau() +
+  #scale_colour_economist() +
+  theme(legend.position = "none") +
+  
+  labs(x = "% Difference of Mean Hourly Wage (>0 -> Men paid more) in 2019", 
+       title = "Difference between genders of % difference of hourly pay across regions in England",
+       subtitle = "London has the least gender pay gap, with South West having the highest gender pay gap. London's middle value of its data of 12% represents females mean hourly wage being 12% less than for men",
+       caption = "NB: % means hourly wage> 0 represents men paid more (e.g 10% means females paid 10% less on average) \n Source: gov.uk Gender Pay Gap Service.", y="") 
+
+
+
+#density
+
+plot_multi_histogram <- function(df, feature, label_column) {
+  plt <- ggplot(df, aes(x=eval(parse(text=feature)), fill=eval(parse(text=label_column)))) +
+    #geom_histogram(alpha=0.7, position="identity", aes(y = ..density..), color="black") +
+    geom_density(alpha=0.4) +
+    theme_minimal() + 
+    geom_vline(aes(xintercept=mean(eval(parse(text=feature)))), color="black", linetype="dashed", size=1) +
+    labs(x="% Difference of Mean Hourly Wage (>0 = Men paid more) ", y = "Density",
+         title = "Distribution between pre and post 1992 Universities of the difference of hourly pay %, vertical line represents mean",
+         subtitle = "Universities pre-1992 show less equality in pay than post-1992 univerisites",
+         caption = "NB: % means hourly wage> 0 represents men paid more (e.g 10% means females paid 10% less on average) \n  Source: gov.uk Gender Pay Gap Service.") +
+    xlim(-2, 35)  
+  #scale_color_manual(fill = c("T999", "T888"), values = c("blue", "red"))
+  plt + guides(fill=guide_legend(title="Year uni founded"))
+}
+
+options(repr.plot.width = 20, repr.plot.height = 8)
+plot_multi_histogram(data_joined_subset1, 'DiffMeanHourlyPercent', 'institution')
+
+
+
+
+
+
+plot_multi_histogram <- function(df, feature, label_column) {
+  plt <- ggplot(df, aes(x=eval(parse(text=feature)), fill=eval(parse(text=label_column)))) +
+    #geom_histogram(alpha=0.7, position="identity", aes(y = ..density..), color="black") +
+    geom_density(alpha=0.4) +
+    theme_minimal() + 
+    geom_vline(aes(xintercept=mean(eval(parse(text=feature)))), color="black", linetype="dashed", size=1) +
+    labs(x="% Difference of Mean Hourly Wage (>0 = Men paid more)", y = "Density",
+         title = "Distribution across years of the difference of hourly pay %, vertical line represents mean",
+         subtitle = "As years progress, the difference in pay gets smaller, as seen by distributions moving towards the left (0 represents no difference in pay)",
+         caption = "NB: % means hourly wage> 0 represents men paid more (e.g 10% means females paid 10% less on average) \n Source: gov.uk Gender Pay Gap Service.") +
+    xlim(-2, 35)
+  plt + guides(fill=guide_legend(title="Year of data"))
+}
+
+plot_multi_histogram(data_joined_subset1, 'DiffMeanHourlyPercent', 'year')

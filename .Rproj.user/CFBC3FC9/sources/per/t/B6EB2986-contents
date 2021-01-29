@@ -1,0 +1,87 @@
+library(MASS)
+crabs
+
+gp<-as.numeric(crabs$sp)*2-as.numeric(crabs$sex)+1
+cr<-crabs[,5:9]
+attach(cr)
+
+cr.lda<-lda(cr,gp)
+cr.lda2<-lda(gp~FL+RW+CL+CW+BD)
+cr.lda3<-lda(gp~cr)
+cr.lda4<-lda(FL+RW+CL+CW+BD,gp)
+
+cr.lda
+
+summary(cr.lda)
+predict(cr.lda)
+
+table(gp,predict(cr.lda)$class)
+
+plot(predict(cr.lda)$x[,1:2],pch=gp,col=gp)
+
+plot(predict(cr.lda)$x[,1:2],pch=gp+14,col=gp+1,main="Crabs: LD1 v LD2")
+legend(-0.5,4.5,c("Blue Female","Blue Male","Orange Female","Orange Male"),
+  pch=c(15:18),col=c(2:5))
+
+newcr<-c(14,13,30,35,13)
+newcr.lda<-predict(cr.lda,newcr)
+
+
+cr.pca<-princomp(cr,cor=TRUE)
+cr.pc<-predict(cr.pca)
+plot(cr.pc[,1:2],xlab="PC1",ylab="PC2",pch=gp+14,col=gp+1,main="Crabs: PC1 v PC2")
+legend(2.5,0.8,c("Blue Female","Blue Male","Orange Female","Orange Male"),
+  pch=c(15:18),col=c(2:5))
+
+cr.lda<-lda(cr,gp)
+plot(predict(cr.lda)$x[,1:2],pch=gp+14,col=gp+1,main="Crabs: LD1 v LD2")
+legend(-0.5,4.5,c("Blue Female","Blue Male","Orange Female","Orange Male"),
+  pch=c(15:18),col=c(2:5))
+x<-seq(-7,7,0.02)
+y<-seq(-5,5,0.02)
+z<-as.matrix(expand.grid(x,y))
+m<-length(x)
+n<-length(y)
+cr.ld<-lda(predict(cr.lda)$x[,1:2],gp)
+cr.pr<-predict(cr.ld,z)$class
+contour(x,y,matrix(cr.pr,m,n),levels=c(1.5:3.5),add=TRUE,d=FALSE)
+
+samp<-c(sample(1:50,30),sample(51:100,30),sample(101:150,30),sample(151:200,30))
+crtr<-cr[samp,]
+gptr<-gp[samp]
+crtest<-cr[-samp,]
+gptest<-gp[-samp]
+
+detach(cr)
+attach(crtr)
+
+crtr.lda<-lda(crtr,gptr)
+plot(predict(crtr.lda)$x[,1:2],pch=gptr+14,col=gptr+1,main="Crabs: LD1 v LD2")
+legend(-0.5,4.5,c("Blue Female","Blue Male","Orange Female","Orange Male"),
+  pch=c(15:18),col=c(2:5))
+
+points(predict(crtr.lda,crtest)$x,pch=3)
+
+predict(crtr.lda,crtest)$class
+
+table(predict(crtr.lda,crtest)$class,gptest)
+
+
+cr.lda<-lda(cr,gp,CV=TRUE)
+table(gp,cr.lda$class)
+
+cr.qda<-qda(cr,gp,CV=TRUE)
+table(gp,cr.qda$class)
+
+
+
+
+
+# NOT RUN {
+tr <- sample(1:50, 25)
+train <- rbind(iris3[tr,,1], iris3[tr,,2], iris3[tr,,3])
+test <- rbind(iris3[-tr,,1], iris3[-tr,,2], iris3[-tr,,3])
+cl <- factor(c(rep("s",25), rep("c",25), rep("v",25)))
+z <- lda(train, cl)
+predict(z, test)$class
+# }
